@@ -1,0 +1,95 @@
+library(caTools)
+library(e1071)
+library(rpart)
+library(rpart.plot)
+library(readr)
+library(caret)
+
+setwd("C:/Users/Pandu/Desktop/Pandu_ course/CASE_STUDY/Hack")
+df <- read.csv("creditcard.csv")
+names(df)
+str(df)
+summary(df)
+
+table(df$Class)
+
+base_line_accuracy= 284315/(284315+492)
+base_line_accuracy
+
+
+set.seed(125)
+split = sample.split(df$Class, SplitRatio = 0.7)
+df_train = subset(df, split==TRUE)
+df_test = subset(df, split==FALSE)
+
+table(df_train$Class)
+table(df_test$Class)
+
+model1 <- glm(Class ~ ., data = df_train, family = binomial)
+summary(model1)
+
+model1_train_pred = predict(model1, newdata = df_train)
+table(df_train$Class, model1_train_pred > 0.5)
+model1_train_accuray = (198995 + 199)/(198995+25+145+199)
+model1_train_accuray
+#
+model1_test_pred = predict(model1, newdata = df_test)
+table(df_test$Class, model1_test_pred>0.4)
+model1_test_accuracy = (85284+89)/(85284+11+59+89)
+model1_test_accuracy
+
+model1_precision = 89/(89+11)
+model1_precision
+model1_recall = 89/(89+59)
+model1_recall
+
+model1_F_measure = 2*model1_precision*model1_recall/(model1_precision+model1_recall)
+model1_F_measure
+
+
+
+dat = df
+
+str(dat)
+summary(dat)
+table(dat$Class)
+
+df$Class = as.factor(df$Class)
+data.class.0 <- subset(df, df$Class == 0)
+data.class.1 <- subset(df, df$Class == 1)
+nrow(data.class.0)
+nrow(data.class.1)
+data.class.0 <- data.class.0[1:10000, ]
+nrow(data.class.0)
+data <- rbind(data.class.0, data.class.1)
+nrow(data)
+
+set.seed(1)
+split <- sample.split(data$Class, SplitRatio = 0.7)
+train <- subset(data, split == T)
+cv <- subset(data, split == F)
+
+table(cv$Class)
+
+model2 <- glm(Class ~ ., data = train, family = "binomial", control = list(maxit = 50))
+model2_predict <- predict(model2, cv, type = "response")
+
+
+library(ROCR)
+ROCRpred= prediction(model2_predict, cv$Class)
+ROCRpref = performance(ROCRpred, "tpr", "fpr")
+plot(ROCRpref, colorize =TRUE, print.cutoffs.at =seq(0.1,0.1), text.adj=c(-0.2, 1.7))
+
+table(cv$Class, model2_predict > 0.5)
+
+model2_test_accuracy = (2994+136)/(2994+6+12+136)
+model2_test_accuracy
+
+model2_precision = 136/(136+6)
+model2_precision
+model2_recall = 136/(136+12)
+model2_recall
+#
+model2_F_measure = 2*model2_precision*model2_recall/(model2_precision+model2_recall)
+model2_F_measure
+
